@@ -225,29 +225,54 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const stations = [
+  // Mumbai / Maharashtra
   { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
   { id: 2, name: "Statiq - Byculla Hub", lat: 18.975, lng: 72.832, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Byculla, Mumbai", deepLink: "https://statiq.in" },
   { id: 3, name: "MG e-Hub - Prabhadevi", lat: 19.014, lng: 72.827, network: "MG e-Hub", power: "50 kW DC", connectors: "CCS2", status: "Busy", address: "Prabhadevi, Mumbai", deepLink: "https://www.mgmotor.co.in" },
   { id: 4, name: "Jio-bp Pulse - Worli", lat: 19.017, lng: 72.815, network: "Jio-bp", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Worli, Mumbai", deepLink: "https://www.jiobp.com" },
-  { id: 5, name: "Charge_iN Mahindra - Andheri", lat: 19.113, lng: 72.869, network: "Charge_iN", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Andheri East, Mumbai", deepLink: "https://www.mahindra.com" },
-  { id: 6, name: "Maruti e for me - Borivali", lat: 19.229, lng: 72.857, network: "e for me", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Borivali, Mumbai", deepLink: "https://www.marutisuzuki.com" },
+  { id: 5, name: "Charge_iN Mahindra - Andheri", lat: 19.113, lng: 72.869, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "Andheri East, Mumbai", deepLink: "https://www.mahindra.com" },
+  { id: 6, name: "Maruti e for me - Borivali Dealership", lat: 19.229, lng: 72.857, network: "e for me", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Borivali, Mumbai", deepLink: "https://www.marutisuzuki.com" },
+  { id: 17, name: "Charge_iN Mahindra - Mumbai-Pune Expressway (Sajgaon)", lat: 18.75, lng: 73.41, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "HP Auto Care, Sajgaon, Pune Expressway", deepLink: "https://www.mahindra.com" },
+  { id: 18, name: "Kia K-Charge - Andheri West", lat: 19.136, lng: 72.829, network: "K-Charge", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Andheri West, Mumbai", deepLink: "https://www.kia.com/in" },
+  { id: 19, name: "Hyundai myHyundai - Bandra", lat: 19.059, lng: 72.840, network: "Hyundai", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra West, Mumbai", deepLink: "https://www.hyundai.com/in" },
+
+  // Delhi NCR
   { id: 7, name: "Tata Power - RK Puram", lat: 28.560, lng: 77.182, network: "Tata Power", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "RK Puram, New Delhi", deepLink: "https://www.tatapower.com" },
-  { id: 8, name: "Pacific Mall Pitampura", lat: 28.693, lng: 77.131, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Busy", address: "Pitampura, Delhi", deepLink: "https://www.tatapower.com" },
-  { id: 9, name: "Jio-bp Pulse Dwarka", lat: 28.592, lng: 77.046, network: "Jio-bp", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Dwarka Sector 13, Delhi", deepLink: "https://www.jiobp.com" },
+  { id: 8, name: "Tata Power - Pacific Mall Pitampura", lat: 28.693, lng: 77.131, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Busy", address: "Pitampura, Delhi", deepLink: "https://www.tatapower.com" },
+  { id: 9, name: "Jio-bp Pulse - Dwarka", lat: 28.592, lng: 77.046, network: "Jio-bp", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Dwarka Sector 13, Delhi", deepLink: "https://www.jiobp.com" },
   { id: 10, name: "ChargeZone - Gurugram", lat: 28.459, lng: 77.026, network: "ChargeZone", power: "150 kW DC", connectors: "CCS2", status: "Available", address: "Gurugram, Haryana", deepLink: "https://www.chargezone.co.in" },
+  { id: 20, name: "Charge_iN Mahindra - Murthal (NH44)", lat: 29.05, lng: 77.06, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "Murthal, Haryana (NH44)", deepLink: "https://www.mahindra.com" },
+  { id: 21, name: "Maruti e for me - Noida Dealership", lat: 28.535, lng: 77.391, network: "e for me", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Noida Sector 18, UP", deepLink: "https://www.marutisuzuki.com" },
+  { id: 22, name: "Kia K-Charge - Gurgaon", lat: 28.459, lng: 77.026, network: "K-Charge", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Gurugram, Haryana", deepLink: "https://www.kia.com/in" },
+
+  // Bengaluru
   { id: 11, name: "BESCOM Corporate Office", lat: 12.976, lng: 77.599, network: "BESCOM", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Bengaluru", deepLink: "#" },
   { id: 12, name: "Tata Power - Begur", lat: 12.872, lng: 77.632, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Begur, Bengaluru", deepLink: "https://www.tatapower.com" },
   { id: 13, name: "Statiq - Electronic City", lat: 12.845, lng: 77.660, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Offline", address: "Electronic City, Bengaluru", deepLink: "https://statiq.in" },
   { id: 14, name: "MG e-Hub - Whitefield", lat: 12.969, lng: 77.750, network: "MG e-Hub", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Whitefield, Bengaluru", deepLink: "https://www.mgmotor.co.in" },
+  { id: 23, name: "Charge_iN Mahindra - Hoskote (NH75)", lat: 13.07, lng: 77.80, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "Hoskote, Bengaluru-Chennai Highway", deepLink: "https://www.mahindra.com" },
+  { id: 24, name: "Hyundai myHyundai - Whitefield", lat: 12.969, lng: 77.750, network: "Hyundai", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Whitefield, Bengaluru", deepLink: "https://www.hyundai.com/in" },
+  { id: 25, name: "Kia K-Charge - Electronic City", lat: 12.845, lng: 77.660, network: "K-Charge", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Electronic City, Bengaluru", deepLink: "https://www.kia.com/in" },
+
+  // Pune
   { id: 15, name: "Tata Power - Hinjewadi", lat: 18.591, lng: 73.738, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Hinjewadi, Pune", deepLink: "https://www.tatapower.com" },
-  { id: 16, name: "Charge_iN - Kothrud", lat: 18.507, lng: 73.807, network: "Charge_iN", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Kothrud, Pune", deepLink: "https://www.mahindra.com" }
+  { id: 16, name: "Charge_iN Mahindra - Kothrud", lat: 18.507, lng: 73.807, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "Kothrud, Pune", deepLink: "https://www.mahindra.com" },
+  { id: 26, name: "Maruti e for me - Pune Dealership", lat: 18.520, lng: 73.856, network: "e for me", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Koregaon Park, Pune", deepLink: "https://www.marutisuzuki.com" },
+
+  // Other cities
+  { id: 27, name: "Tata Power - Hyderabad", lat: 17.385, lng: 78.486, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Hitech City, Hyderabad", deepLink: "https://www.tatapower.com" },
+  { id: 28, name: "Charge_iN Mahindra - Hyderabad", lat: 17.440, lng: 78.348, network: "Charge_iN", power: "180 kW DC", connectors: "CCS2", status: "Available", address: "Gachibowli, Hyderabad", deepLink: "https://www.mahindra.com" },
+  { id: 29, name: "Jio-bp Pulse - Chennai", lat: 13.082, lng: 80.270, network: "Jio-bp", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Anna Nagar, Chennai", deepLink: "https://www.jiobp.com" },
+  { id: 30, name: "Statiq - Ahmedabad", lat: 23.022, lng: 72.571, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "SG Highway, Ahmedabad", deepLink: "https://statiq.in" },
+  { id: 31, name: "Kia K-Charge - Jaipur", lat: 26.912, lng: 75.787, network: "K-Charge", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "C-Scheme, Jaipur", deepLink: "https://www.kia.com/in" },
+  { id: 32, name: "Hyundai myHyundai - Kolkata", lat: 22.572, lng: 88.363, network: "Hyundai", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Salt Lake, Kolkata", deepLink: "https://www.hyundai.com/in" }
 ];
 
-const networks = ["All", "Tata Power", "Statiq", "MG e-Hub", "Charge_iN", "Jio-bp", "ChargeZone", "e for me", "BESCOM"];
+const networks = ["All", "Tata Power", "Statiq", "MG e-Hub", "Charge_iN", "Jio-bp", "ChargeZone", "e for me", "K-Charge", "Hyundai", "BESCOM"];
 const networkColors = {
   "Tata Power": "#ef4444", "Statiq": "#a78bfa", "MG e-Hub": "#60a5fa",
   "Charge_iN": "#fb923c", "Jio-bp": "#38bdf8", "ChargeZone": "#fbbf24",
-  "e for me": "#3b82f6", "BESCOM": "#94a3b8"
+  "e for me": "#3b82f6", "K-Charge": "#ec4899", "Hyundai": "#10b981", "BESCOM": "#94a3b8"
 };
 
 let map, markers = [], activeFilter = "All";
