@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>EVUnify — Unified EV Charging India</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a2332;
+    --accent: #00d4aa;
+    --accent-dark: #00b894;
+    --text: #e8f0fe;
+    --muted: #8b9bb4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+  header {
+    height: 60px;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid #2a3548;
+    z-index: 1000;
+  }
+  .logo { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--text); font-weight: 500; }
+  .header-actions { display: flex; gap: 8px; }
+  button {
+    background: var(--accent);
+    color: #0f1419;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.secondary { background: #2a3548; color: var(--text); }
+  #map { height: calc(100vh - 60px - 220px); width: 100%; }
+  .bottom-panel {
+    height: 220px;
+    background: var(--card);
+    border-top: 1px solid #2a3548;
+    display: flex;
+    flex-direction: column;
+  }
+  .filters {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: 1px solid #2a3548;
+  }
+  .filter-chip {
+    background: #2a3548;
+    color: var(--text);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .filter-chip.active { background: var(--accent); color: #0f1419; }
+  .station-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+  }
+  .station-item {
+    background: #0f1419;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .station-item:hover, .station-item.active { border-color: var(--accent); }
+  .station-item h3 { font-size: 14px; margin-bottom: 4px; }
+  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .network-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .popup-content { font-size: 13px; line-height: 1.5; }
+  .popup-content h3 { margin: 0 0 6px; color: var(--accent); }
+  .status-available { color: #00d4aa; }
+  .status-busy { color: #f59e0b; }
+  .status-offline { color: #ef4444; }
+  .leaflet-popup-content-wrapper { background: var(--card); color: var(--text); border-radius: 12px; }
+  .leaflet-popup-tip { background: var(--card); }
+  @media (max-width: 600px) {
+    #map { height: calc(100vh - 60px - 280px); }
+    .bottom-panel { height: 280px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">EV<span>Unify</span></div>
+  <div class="header-actions">
+    <button class="secondary" onclick="centerOnUser()">📍 Near Me</button>
+    <button onclick="alert('Prototype: In production this would open Google Maps contribution or partner portal')">+ Add Station</button>
+  </div>
+</header>
+<div id="map"></div>
+<div class="bottom-panel">
+  <div class="filters" id="filters"></div>
+  <div class="station-list" id="stationList"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const stations = [
+  { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
+  { id: 2, name: "Statiq - Byculla Hub", lat: 18.975, lng: 72.832, network: "Statiq", oem: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Byculla, Mumbai", deepLink: "https://statiq.in" },
+  { id: 3, name: "MG e-Hub - Prabhadevi", lat: 19.014, lng: 72.827, network: "MG e-Hub", oem: "MG", power: "50 kW DC", connectors: "CCS2", status: "Busy", address: "Prabhadevi, Mumbai", deepLink: "https://www.mgmotor.co.in" },
+  { id: 4, name: "Jio-bp Pulse - Worli", lat: 19.017, lng: 72.815, network: "Jio-bp", oem: "Hyundai/Kia", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Worli, Mumbai", deepLink: "https://www.jiobp.com" },
+  { id: 5, name: "Charge_iN Mahindra - Andheri", lat: 19.113, lng: 72.869, network: "Charge_iN", oem: "Mahindra", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Andheri East, Mumbai", deepLink: "https://www.mahindra.com" },
+  { id: 6, name: "Maruti e for me - Borivali", lat: 19.229, lng: 72.857, network: "e for me", oem: "Maruti", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Borivali, Mumbai", deepLink: "https://www.marutisuzuki.com" },
+  { id: 7, name: "Tata Power - RK Puram", lat: 28.560, lng: 77.182, network: "Tata Power", oem: "Tata", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "RK Puram, New Delhi", deepLink: "https://www.tatapower.com" },
+  { id: 8, name: "Pacific Mall Pitampura", lat: 28.693, lng: 77.131, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Busy", address: "Pitampura, Delhi", deepLink: "https://www.tatapower.com" },
+  { id: 9, name: "Jio-bp Pulse Dwarka", lat: 28.592, lng: 77.046, network: "Jio-bp", oem: "Hyundai", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Dwarka Sector 13, Delhi", deepLink: "https://www.jiobp.com" },
+  { id: 10, name: "ChargeZone - Gurugram", lat: 28.459, lng: 77.026, network: "ChargeZone", oem: "ChargeZone", power: "150 kW DC", connectors: "CCS2", status: "Available", address: "Gurugram, Haryana", deepLink: "https://www.chargezone.co.in" },
+  { id: 11, name: "BESCOM Corporate Office", lat: 12.976, lng: 77.599, network: "BESCOM", oem: "Other", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Sampangi Rama Nagar, Bengaluru", deepLink: "#" },
+  { id: 12, name: "Tata Power - Begur", lat: 12.872, lng: 77.632, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Begur, Bengaluru", deepLink: "https://www.tatapower.com" },
+  { id: 13, name: "Statiq - Electronic City", lat: 12.845, lng: 77.660, network: "Statiq", oem: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Offline", address: "Electronic City, Bengaluru", deepLink: "https://statiq.in" },
+  { id: 14, name: "MG e-Hub - Whitefield", lat: 12.969, lng: 77.750, network: "MG e-Hub", oem: "MG", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Whitefield, Bengaluru", deepLink: "https://www.mgmotor.co.in" },
+  { id: 15, name: "Tata Power - Hinjewadi", lat: 18.591, lng: 73.738, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Hinjewadi, Pune", deepLink: "https://www.tatapower.com" },
+  { id: 16, name: "Charge_iN - Kothrud", lat: 18.507, lng: 73.807, network: "Charge_iN", oem: "Mahindra", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Kothrud, Pune", deepLink: "https://www.mahindra.com" }
+];
+
+const networks = ["All", "Tata Power", "Statiq", "MG e-Hub", "Charge_iN", "Jio-bp", "ChargeZone", "e for me", "BESCOM"];
+const networkColors = {
+  "Tata Power": "#e31e24",
+  "Statiq": "#7c3aed",
+  "MG e-Hub": "#1a73e8",
+  "Charge_iN": "#ff6b00",
+  "Jio-bp": "#00a0e3",
+  "ChargeZone": "#f59e0b",
+  "e for me": "#0052cc",
+  "BESCOM": "#64748b"
+};
+
+let map, markers = [], activeFilter = "All";
+
+function initMap() {
+  map = L.map('map').setView([19.076, 72.877], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(map);
+  renderFilters();
+  renderStations();
+}
+
+function renderFilters() {
+  const container = document.getElementById('filters');
+  container.innerHTML = networks.map(n => 
+    `<button class="filter-chip ${n === activeFilter ? 'active' : ''}" onclick="setFilter('${n}')">${n}</button>`
+  ).join('');
+}
+
+function setFilter(network) {
+  activeFilter = network;
+  renderFilters();
+  renderStations();
+}
+
+function getColor(network) {
+  return networkColors[network] || "#64748b";
+}
+
+function renderStations() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const filtered = activeFilter === "All" ? stations : stations.filter(s => s.network === activeFilter);
+  filtered.forEach(s => {
+    const color = getColor(s.network);
+    const marker = L.circleMarker([s.lat, s.lng], {
+      radius: 9,
+      fillColor: color,
+      color: "#fff",
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9
+    }).addTo(map);
+    const statusClass = s.status === "Available" ? "status-available" : s.status === "Busy" ? "status-busy" : "status-offline";
+    const popup = `
+      <div class="popup-content">
+        <h3>${s.name}</h3>
+        <div><strong>${s.network}</strong> • ${s.power}</div>
+        <div>Connector: ${s.connectors}</div>
+        <div class="${statusClass}">● ${s.status}</div>
+        <div style="margin:6px 0; font-size:12px; color:#8b9bb4">${s.address}</div>
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="background:#00d4aa;color:#0f1419;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Navigate</a>
+          <a href="${s.deepLink}" target="_blank" style="background:#2a3548;color:#e8f0fe;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;">Open App</a>
+        </div>
+      </div>
+    `;
+    marker.bindPopup(popup);
+    markers.push(marker);
+  });
+  const list = document.getElementById('stationList');
+  list.innerHTML = filtered.map(s => `
+    <div class="station-item" onclick="focusStation(${s.id})">
+      <h3>${s.name}</h3>
+      <div class="meta">
+        <span class="network-badge" style="background:${getColor(s.network)};color:#fff">${s.network}</span>
+        <span>${s.power}</span>
+        <span>${s.connectors}</span>
+        <span class="${s.status === 'Available' ? 'status-available' : ''}">${s.status}</span>
+      </div>
+    </div>
+  `).join('') || '<div style="padding:20px;text-align:center;color:#8b9bb4">No stations for this filter</div>';
+  if (filtered.length) {
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+}
+
+function focusStation(id) {
+  const s = stations.find(st => st.id === id);
+  if (!s) return;
+  map.setView([s.lat, s.lng], 15);
+  const marker = markers.find(m => m.getLatLng().lat === s.lat && m.getLatLng().lng === s.lng);
+  if (marker) marker.openPopup();
+}
+
+function centerOnUser() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      map.setView([pos.coords.latitude, pos.coords.longitude], 13);
+    }, () => alert("Location access denied or unavailable. Showing Mumbai."));
+  } else {
+    alert("Geolocation not supported.");
+  }
+}
+
+initMap();
+</script>
+</body>
+</html>
