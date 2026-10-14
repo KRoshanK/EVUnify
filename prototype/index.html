@@ -10,7 +10,6 @@
     --bg: #0f1419;
     --card: #1a2332;
     --accent: #00d4aa;
-    --accent-dark: #00b894;
     --text: #e8f0fe;
     --muted: #8b9bb4;
   }
@@ -32,10 +31,10 @@
     border-bottom: 1px solid #2a3548;
     z-index: 1000;
   }
-  .logo { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .logo { font-size: 22px; font-weight: 700; color: var(--accent); }
   .logo span { color: var(--text); font-weight: 500; }
-  .header-actions { display: flex; gap: 8px; }
-  button {
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button, .btn {
     background: var(--accent);
     color: #0f1419;
     border: none;
@@ -46,9 +45,10 @@
     cursor: pointer;
   }
   button.secondary { background: #2a3548; color: var(--text); }
-  #map { height: calc(100vh - 60px - 220px); width: 100%; }
+  .wallet { background: #2a3548; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  #map { height: calc(100vh - 60px - 280px); width: 100%; }
   .bottom-panel {
-    height: 220px;
+    height: 280px;
     background: var(--card);
     border-top: 1px solid #2a3548;
     display: flex;
@@ -96,6 +96,7 @@
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
+    color: #fff;
   }
   .popup-content { font-size: 13px; line-height: 1.5; }
   .popup-content h3 { margin: 0 0 6px; color: var(--accent); }
@@ -104,9 +105,41 @@
   .status-offline { color: #ef4444; }
   .leaflet-popup-content-wrapper { background: var(--card); color: var(--text); border-radius: 12px; }
   .leaflet-popup-tip { background: var(--card); }
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .modal-card {
+    background: var(--card);
+    padding: 24px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-card h2 { margin-bottom: 12px; color: var(--accent); }
+  .modal-card input, .modal-card select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #2a3548;
+    background: #0f1419;
+    color: var(--text);
+  }
+  .note { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .history-item { background: #0f1419; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+  .map-toggle { font-size: 12px; }
   @media (max-width: 600px) {
-    #map { height: calc(100vh - 60px - 280px); }
-    .bottom-panel { height: 280px; }
+    #map { height: calc(100vh - 60px - 340px); }
+    .bottom-panel { height: 340px; }
   }
 </style>
 </head>
@@ -114,8 +147,10 @@
 <header>
   <div class="logo">EV<span>Unify</span></div>
   <div class="header-actions">
+    <div class="wallet" id="walletDisplay" onclick="openWallet()">Wallet: ₹0</div>
+    <button class="secondary" id="authBtn" onclick="openAuth()">Register / Login</button>
+    <button class="secondary map-toggle" onclick="toggleMapMode()">Map: Leaflet</button>
     <button class="secondary" onclick="centerOnUser()">📍 Near Me</button>
-    <button onclick="alert('Prototype: In production this would open Google Maps contribution or partner portal')">+ Add Station</button>
   </div>
 </header>
 <div id="map"></div>
@@ -124,55 +159,166 @@
   <div class="station-list" id="stationList"></div>
 </div>
 
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+  <div class="modal-card">
+    <h2>One Account for All Networks</h2>
+    <p style="font-size:14px;margin-bottom:12px;">Register once. Charge and pay on Tata, Mahindra, MG, Statiq, ChargeZone, Jio-bp and more.</p>
+    <input id="userName" placeholder="Your name" />
+    <input id="userPhone" placeholder="Mobile number" type="tel" />
+    <button onclick="register()" style="width:100%;margin-top:8px;">Create Unified Account</button>
+    <button class="secondary" onclick="closeAuth()" style="width:100%;margin-top:6px;">Cancel</button>
+    <div class="note">Prototype simulation only. Real version uses OCPI roaming + UPI / wallet.</div>
+  </div>
+</div>
+
+<!-- Wallet / History Modal -->
+<div class="modal" id="walletModal">
+  <div class="modal-card">
+    <h2>Unified Wallet</h2>
+    <p>Balance: <strong id="walletBalance">₹0</strong></p>
+    <input id="addAmount" type="number" placeholder="Amount to add (₹)" min="100" step="100" value="500" />
+    <button onclick="addMoney()" style="width:100%;margin-top:8px;">Add Money (UPI Simulation)</button>
+    <h3 style="margin-top:16px;margin-bottom:8px;">Session History</h3>
+    <div id="historyList"></div>
+    <button class="secondary" onclick="closeWallet()" style="width:100%;margin-top:12px;">Close</button>
+    <div class="note">In production: real UPI / card top-up and OCPI session records.</div>
+  </div>
+</div>
+
+<!-- Charge Modal -->
+<div class="modal" id="chargeModal">
+  <div class="modal-card">
+    <h2 id="chargeTitle">Start Charging</h2>
+    <p id="chargeDetails"></p>
+    <p style="margin:12px 0;">Estimated cost: <strong>₹45 – ₹80</strong> (depends on energy used)</p>
+    <button onclick="startCharge()" style="width:100%;">Pay & Start Charge</button>
+    <button class="secondary" onclick="closeCharge()" style="width:100%;margin-top:6px;">Cancel</button>
+    <div class="note">In production this sends a start command to the operator via OCPI and processes payment through the unified wallet / UPI.</div>
+  </div>
+</div>
+
+<!-- API Key Notice Modal -->
+<div class="modal" id="apiKeyModal">
+  <div class="modal-card">
+    <h2>Google Maps API Key Required</h2>
+    <p>To use the real Google Maps embed:</p>
+    <ol style="margin:12px 0 12px 18px;font-size:14px;line-height:1.6;">
+      <li>Go to <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" style="color:#00d4aa">Google Cloud Console</a></li>
+      <li>Create a project → Enable <strong>Maps JavaScript API</strong></li>
+      <li>Create an API key and restrict it to your domain</li>
+      <li>Replace <code>YOUR_GOOGLE_MAPS_API_KEY</code> in the HTML (search for it)</li>
+    </ol>
+    <button onclick="closeApiKey()" style="width:100%;">Got it</button>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Google Maps script will be loaded dynamically when needed -->
 <script>
+const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // ← PUT YOUR KEY HERE
+
 const stations = [
-  { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
-  { id: 2, name: "Statiq - Byculla Hub", lat: 18.975, lng: 72.832, network: "Statiq", oem: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Byculla, Mumbai", deepLink: "https://statiq.in" },
-  { id: 3, name: "MG e-Hub - Prabhadevi", lat: 19.014, lng: 72.827, network: "MG e-Hub", oem: "MG", power: "50 kW DC", connectors: "CCS2", status: "Busy", address: "Prabhadevi, Mumbai", deepLink: "https://www.mgmotor.co.in" },
-  { id: 4, name: "Jio-bp Pulse - Worli", lat: 19.017, lng: 72.815, network: "Jio-bp", oem: "Hyundai/Kia", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Worli, Mumbai", deepLink: "https://www.jiobp.com" },
-  { id: 5, name: "Charge_iN Mahindra - Andheri", lat: 19.113, lng: 72.869, network: "Charge_iN", oem: "Mahindra", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Andheri East, Mumbai", deepLink: "https://www.mahindra.com" },
-  { id: 6, name: "Maruti e for me - Borivali", lat: 19.229, lng: 72.857, network: "e for me", oem: "Maruti", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Borivali, Mumbai", deepLink: "https://www.marutisuzuki.com" },
-  { id: 7, name: "Tata Power - RK Puram", lat: 28.560, lng: 77.182, network: "Tata Power", oem: "Tata", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "RK Puram, New Delhi", deepLink: "https://www.tatapower.com" },
-  { id: 8, name: "Pacific Mall Pitampura", lat: 28.693, lng: 77.131, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Busy", address: "Pitampura, Delhi", deepLink: "https://www.tatapower.com" },
-  { id: 9, name: "Jio-bp Pulse Dwarka", lat: 28.592, lng: 77.046, network: "Jio-bp", oem: "Hyundai", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Dwarka Sector 13, Delhi", deepLink: "https://www.jiobp.com" },
-  { id: 10, name: "ChargeZone - Gurugram", lat: 28.459, lng: 77.026, network: "ChargeZone", oem: "ChargeZone", power: "150 kW DC", connectors: "CCS2", status: "Available", address: "Gurugram, Haryana", deepLink: "https://www.chargezone.co.in" },
-  { id: 11, name: "BESCOM Corporate Office", lat: 12.976, lng: 77.599, network: "BESCOM", oem: "Other", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Sampangi Rama Nagar, Bengaluru", deepLink: "#" },
-  { id: 12, name: "Tata Power - Begur", lat: 12.872, lng: 77.632, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Begur, Bengaluru", deepLink: "https://www.tatapower.com" },
-  { id: 13, name: "Statiq - Electronic City", lat: 12.845, lng: 77.660, network: "Statiq", oem: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Offline", address: "Electronic City, Bengaluru", deepLink: "https://statiq.in" },
-  { id: 14, name: "MG e-Hub - Whitefield", lat: 12.969, lng: 77.750, network: "MG e-Hub", oem: "MG", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Whitefield, Bengaluru", deepLink: "https://www.mgmotor.co.in" },
-  { id: 15, name: "Tata Power - Hinjewadi", lat: 18.591, lng: 73.738, network: "Tata Power", oem: "Tata", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Hinjewadi, Pune", deepLink: "https://www.tatapower.com" },
-  { id: 16, name: "Charge_iN - Kothrud", lat: 18.507, lng: 73.807, network: "Charge_iN", oem: "Mahindra", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Kothrud, Pune", deepLink: "https://www.mahindra.com" }
+  { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
+  { id: 2, name: "Statiq - Byculla Hub", lat: 18.975, lng: 72.832, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Byculla, Mumbai", deepLink: "https://statiq.in" },
+  { id: 3, name: "MG e-Hub - Prabhadevi", lat: 19.014, lng: 72.827, network: "MG e-Hub", power: "50 kW DC", connectors: "CCS2", status: "Busy", address: "Prabhadevi, Mumbai", deepLink: "https://www.mgmotor.co.in" },
+  { id: 4, name: "Jio-bp Pulse - Worli", lat: 19.017, lng: 72.815, network: "Jio-bp", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Worli, Mumbai", deepLink: "https://www.jiobp.com" },
+  { id: 5, name: "Charge_iN Mahindra - Andheri", lat: 19.113, lng: 72.869, network: "Charge_iN", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Andheri East, Mumbai", deepLink: "https://www.mahindra.com" },
+  { id: 6, name: "Maruti e for me - Borivali", lat: 19.229, lng: 72.857, network: "e for me", power: "22 kW AC", connectors: "Type 2", status: "Available", address: "Borivali, Mumbai", deepLink: "https://www.marutisuzuki.com" },
+  { id: 7, name: "Tata Power - RK Puram", lat: 28.560, lng: 77.182, network: "Tata Power", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "RK Puram, New Delhi", deepLink: "https://www.tatapower.com" },
+  { id: 8, name: "Pacific Mall Pitampura", lat: 28.693, lng: 77.131, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Busy", address: "Pitampura, Delhi", deepLink: "https://www.tatapower.com" },
+  { id: 9, name: "Jio-bp Pulse Dwarka", lat: 28.592, lng: 77.046, network: "Jio-bp", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Dwarka Sector 13, Delhi", deepLink: "https://www.jiobp.com" },
+  { id: 10, name: "ChargeZone - Gurugram", lat: 28.459, lng: 77.026, network: "ChargeZone", power: "150 kW DC", connectors: "CCS2", status: "Available", address: "Gurugram, Haryana", deepLink: "https://www.chargezone.co.in" },
+  { id: 11, name: "BESCOM Corporate Office", lat: 12.976, lng: 77.599, network: "BESCOM", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Bengaluru", deepLink: "#" },
+  { id: 12, name: "Tata Power - Begur", lat: 12.872, lng: 77.632, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Begur, Bengaluru", deepLink: "https://www.tatapower.com" },
+  { id: 13, name: "Statiq - Electronic City", lat: 12.845, lng: 77.660, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Offline", address: "Electronic City, Bengaluru", deepLink: "https://statiq.in" },
+  { id: 14, name: "MG e-Hub - Whitefield", lat: 12.969, lng: 77.750, network: "MG e-Hub", power: "50 kW DC", connectors: "CCS2", status: "Available", address: "Whitefield, Bengaluru", deepLink: "https://www.mgmotor.co.in" },
+  { id: 15, name: "Tata Power - Hinjewadi", lat: 18.591, lng: 73.738, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Hinjewadi, Pune", deepLink: "https://www.tatapower.com" },
+  { id: 16, name: "Charge_iN - Kothrud", lat: 18.507, lng: 73.807, network: "Charge_iN", power: "100 kW DC", connectors: "CCS2", status: "Available", address: "Kothrud, Pune", deepLink: "https://www.mahindra.com" }
 ];
 
 const networks = ["All", "Tata Power", "Statiq", "MG e-Hub", "Charge_iN", "Jio-bp", "ChargeZone", "e for me", "BESCOM"];
 const networkColors = {
-  "Tata Power": "#e31e24",
-  "Statiq": "#7c3aed",
-  "MG e-Hub": "#1a73e8",
-  "Charge_iN": "#ff6b00",
-  "Jio-bp": "#00a0e3",
-  "ChargeZone": "#f59e0b",
-  "e for me": "#0052cc",
-  "BESCOM": "#64748b"
+  "Tata Power": "#e31e24", "Statiq": "#7c3aed", "MG e-Hub": "#1a73e8",
+  "Charge_iN": "#ff6b00", "Jio-bp": "#00a0e3", "ChargeZone": "#f59e0b",
+  "e for me": "#0052cc", "BESCOM": "#64748b"
 };
 
-let map, markers = [], activeFilter = "All";
+let leafletMap, googleMap, googleMarkers = [];
+let markers = [], activeFilter = "All";
+let useGoogleMaps = false;
+let user = null;
+let wallet = 0;
+let sessions = [];
+let currentStation = null;
 
 function initMap() {
-  map = L.map('map').setView([19.076, 72.877], 11);
+  initLeaflet();
+  renderFilters();
+  renderStations();
+  updateWallet();
+  renderHistory();
+}
+
+function initLeaflet() {
+  if (leafletMap) leafletMap.remove();
+  leafletMap = L.map('map').setView([19.076, 72.877], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 20
-  }).addTo(map);
-  renderFilters();
+  }).addTo(leafletMap);
+}
+
+function loadGoogleMaps() {
+  if (GOOGLE_MAPS_API_KEY === "YOUR_GOOGLE_MAPS_API_KEY") {
+    document.getElementById('apiKeyModal').classList.add('open');
+    return false;
+  }
+  if (window.google && window.google.maps) {
+    initGoogleMap();
+    return true;
+  }
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initGoogleMap`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+  return true;
+}
+
+function initGoogleMap() {
+  document.getElementById('map').innerHTML = '';
+  googleMap = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 19.076, lng: 72.877 },
+    zoom: 11,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#0f1419" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#0f1419" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#8b9bb4" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a2332" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a0e14" }] }
+    ]
+  });
   renderStations();
 }
 
+function toggleMapMode() {
+  useGoogleMaps = !useGoogleMaps;
+  document.querySelector('.map-toggle').textContent = useGoogleMaps ? "Map: Google" : "Map: Leaflet";
+  if (useGoogleMaps) {
+    if (!loadGoogleMaps()) useGoogleMaps = false;
+  } else {
+    document.getElementById('map').innerHTML = '';
+    initLeaflet();
+    renderStations();
+  }
+}
+
+function closeApiKey() { document.getElementById('apiKeyModal').classList.remove('open'); }
+
 function renderFilters() {
-  const container = document.getElementById('filters');
-  container.innerHTML = networks.map(n => 
+  document.getElementById('filters').innerHTML = networks.map(n =>
     `<button class="filter-chip ${n === activeFilter ? 'active' : ''}" onclick="setFilter('${n}')">${n}</button>`
   ).join('');
 }
@@ -183,75 +329,181 @@ function setFilter(network) {
   renderStations();
 }
 
-function getColor(network) {
-  return networkColors[network] || "#64748b";
-}
+function getColor(network) { return networkColors[network] || "#64748b"; }
 
 function renderStations() {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
   const filtered = activeFilter === "All" ? stations : stations.filter(s => s.network === activeFilter);
-  filtered.forEach(s => {
-    const color = getColor(s.network);
-    const marker = L.circleMarker([s.lat, s.lng], {
-      radius: 9,
-      fillColor: color,
-      color: "#fff",
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.9
-    }).addTo(map);
-    const statusClass = s.status === "Available" ? "status-available" : s.status === "Busy" ? "status-busy" : "status-offline";
-    const popup = `
-      <div class="popup-content">
-        <h3>${s.name}</h3>
-        <div><strong>${s.network}</strong> • ${s.power}</div>
-        <div>Connector: ${s.connectors}</div>
-        <div class="${statusClass}">● ${s.status}</div>
-        <div style="margin:6px 0; font-size:12px; color:#8b9bb4">${s.address}</div>
-        <div style="display:flex; gap:6px; margin-top:8px;">
-          <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="background:#00d4aa;color:#0f1419;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Navigate</a>
-          <a href="${s.deepLink}" target="_blank" style="background:#2a3548;color:#e8f0fe;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;">Open App</a>
-        </div>
-      </div>
-    `;
-    marker.bindPopup(popup);
-    markers.push(marker);
-  });
-  const list = document.getElementById('stationList');
-  list.innerHTML = filtered.map(s => `
+
+  if (useGoogleMaps && googleMap) {
+    googleMarkers.forEach(m => m.setMap(null));
+    googleMarkers = [];
+    filtered.forEach(s => {
+      const marker = new google.maps.Marker({
+        position: { lat: s.lat, lng: s.lng },
+        map: googleMap,
+        title: s.name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: getColor(s.network),
+          fillOpacity: 0.9,
+          strokeColor: "#fff",
+          strokeWeight: 2
+        }
+      });
+      const info = new google.maps.InfoWindow({
+        content: buildPopup(s)
+      });
+      marker.addListener("click", () => info.open(googleMap, marker));
+      googleMarkers.push(marker);
+    });
+    if (filtered.length) {
+      const bounds = new google.maps.LatLngBounds();
+      filtered.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+      googleMap.fitBounds(bounds);
+    }
+  } else {
+    markers.forEach(m => leafletMap.removeLayer(m));
+    markers = [];
+    filtered.forEach(s => {
+      const marker = L.circleMarker([s.lat, s.lng], {
+        radius: 9, fillColor: getColor(s.network), color: "#fff", weight: 2, fillOpacity: 0.9
+      }).addTo(leafletMap);
+      marker.bindPopup(buildPopup(s));
+      markers.push(marker);
+    });
+    if (filtered.length && leafletMap) {
+      leafletMap.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+    }
+  }
+
+  document.getElementById('stationList').innerHTML = filtered.map(s => `
     <div class="station-item" onclick="focusStation(${s.id})">
       <h3>${s.name}</h3>
       <div class="meta">
-        <span class="network-badge" style="background:${getColor(s.network)};color:#fff">${s.network}</span>
+        <span class="network-badge" style="background:${getColor(s.network)}">${s.network}</span>
         <span>${s.power}</span>
         <span>${s.connectors}</span>
         <span class="${s.status === 'Available' ? 'status-available' : ''}">${s.status}</span>
       </div>
     </div>
-  `).join('') || '<div style="padding:20px;text-align:center;color:#8b9bb4">No stations for this filter</div>';
-  if (filtered.length) {
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.2));
-  }
+  `).join('') || '<div style="padding:20px;text-align:center;color:#8b9bb4">No stations</div>';
+}
+
+function buildPopup(s) {
+  const statusClass = s.status === "Available" ? "status-available" : s.status === "Busy" ? "status-busy" : "status-offline";
+  return `
+    <div class="popup-content">
+      <h3>${s.name}</h3>
+      <div><strong>${s.network}</strong> • ${s.power}</div>
+      <div>Connector: ${s.connectors}</div>
+      <div class="${statusClass}">● ${s.status}</div>
+      <div style="margin:6px 0;font-size:12px;color:#8b9bb4">${s.address}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank"
+           style="background:#00d4aa;color:#0f1419;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Google Maps</a>
+        <button onclick="openCharge(${s.id})" style="background:#00d4aa;color:#0f1419;border:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Charge & Pay</button>
+        <a href="${s.deepLink}" target="_blank" style="background:#2a3548;color:#e8f0fe;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;">Operator App</a>
+      </div>
+    </div>`;
 }
 
 function focusStation(id) {
   const s = stations.find(st => st.id === id);
   if (!s) return;
-  map.setView([s.lat, s.lng], 15);
-  const marker = markers.find(m => m.getLatLng().lat === s.lat && m.getLatLng().lng === s.lng);
-  if (marker) marker.openPopup();
+  if (useGoogleMaps && googleMap) {
+    googleMap.setCenter({ lat: s.lat, lng: s.lng });
+    googleMap.setZoom(15);
+  } else if (leafletMap) {
+    leafletMap.setView([s.lat, s.lng], 15);
+  }
 }
 
 function centerOnUser() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
-      map.setView([pos.coords.latitude, pos.coords.longitude], 13);
-    }, () => alert("Location access denied or unavailable. Showing Mumbai."));
-  } else {
-    alert("Geolocation not supported.");
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (useGoogleMaps && googleMap) {
+        googleMap.setCenter({ lat, lng });
+        googleMap.setZoom(13);
+      } else if (leafletMap) {
+        leafletMap.setView([lat, lng], 13);
+      }
+    });
   }
+}
+
+function openAuth() { document.getElementById('authModal').classList.add('open'); }
+function closeAuth() { document.getElementById('authModal').classList.remove('open'); }
+
+function register() {
+  const name = document.getElementById('userName').value || "EV Driver";
+  user = { name };
+  wallet = 500;
+  sessions = [];
+  updateWallet();
+  document.getElementById('authBtn').textContent = "Hi, " + name.split(" ")[0];
+  closeAuth();
+  alert("Unified account created!\nYou can now charge and pay on any network with this single wallet.");
+}
+
+function updateWallet() {
+  document.getElementById('walletDisplay').textContent = `Wallet: ₹${wallet}`;
+  const bal = document.getElementById('walletBalance');
+  if (bal) bal.textContent = `₹${wallet}`;
+}
+
+function openWallet() {
+  if (!user) { alert("Please register first."); openAuth(); return; }
+  document.getElementById('walletModal').classList.add('open');
+  renderHistory();
+}
+function closeWallet() { document.getElementById('walletModal').classList.remove('open'); }
+
+function addMoney() {
+  const amt = parseInt(document.getElementById('addAmount').value) || 0;
+  if (amt < 100) { alert("Minimum ₹100"); return; }
+  wallet += amt;
+  sessions.unshift({ type: "Top-up", amount: amt, time: new Date().toLocaleString(), detail: "UPI Simulation" });
+  updateWallet();
+  renderHistory();
+  alert(`₹${amt} added to wallet.`);
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  list.innerHTML = sessions.length ? sessions.map(s => `
+    <div class="history-item">
+      <strong>${s.type}</strong> • ₹${s.amount} • ${s.time}<br>
+      <span style="color:#8b9bb4">${s.detail}</span>
+    </div>
+  `).join('') : '<div style="color:#8b9bb4;font-size:13px;">No sessions yet</div>';
+}
+
+function openCharge(id) {
+  if (!user) { alert("Please register / login once to use unified charging & payment."); openAuth(); return; }
+  currentStation = stations.find(s => s.id === id);
+  document.getElementById('chargeTitle').textContent = "Charge at " + currentStation.name;
+  document.getElementById('chargeDetails').innerHTML = `${currentStation.network} • ${currentStation.power}<br>${currentStation.address}`;
+  document.getElementById('chargeModal').classList.add('open');
+}
+function closeCharge() { document.getElementById('chargeModal').classList.remove('open'); }
+
+function startCharge() {
+  const cost = Math.floor(Math.random() * 40) + 40;
+  if (wallet < cost) { alert("Insufficient wallet balance. Add money first."); openWallet(); return; }
+  wallet -= cost;
+  sessions.unshift({
+    type: "Charging",
+    amount: -cost,
+    time: new Date().toLocaleString(),
+    detail: `${currentStation.name} (${currentStation.network})`
+  });
+  updateWallet();
+  renderHistory();
+  closeCharge();
+  alert(`Charging started at ${currentStation.name}!\n₹${cost} deducted from your unified wallet.\n\nIn production: session started via OCPI on the operator’s charger.`);
 }
 
 initMap();
