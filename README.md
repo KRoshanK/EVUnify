@@ -6,6 +6,22 @@ EVUnify solves a major pain point for EV drivers in India: charging stations fro
 
 This project aims to create a neutral platform that aggregates all these stations under one umbrella, respects the original operator networks/apps, and makes them visible and navigable on Google Maps.
 
+## 🚀 Interactive Prototype
+
+A working web prototype is available in [`prototype/index.html`](prototype/index.html).
+
+**Features in the prototype:**
+- Dark-themed interactive map (Leaflet + CARTO tiles)
+- Sample stations across Mumbai, Delhi NCR, Bengaluru, and Pune from major networks
+- Color-coded pins by network (Tata Power, Statiq, MG e-Hub, Charge_iN, Jio-bp, ChargeZone, etc.)
+- Filter chips by network
+- Station list synced with map
+- Popups with status, power, connector, Navigate (Google Maps) and Open App links
+- Near Me button (uses browser geolocation)
+- Mobile-responsive layout
+
+Open `prototype/index.html` in any browser, or serve the folder locally.
+
 ## Problem Statement
 - EV owners must install and switch between multiple OEM and CPO apps.
 - Many stations (especially OEM-tied) do not appear reliably on Google Maps.
@@ -21,7 +37,7 @@ A unified discovery, mapping, and navigation platform that:
 - Supports user contributions and verification.
 
 ## Status
-Research and concept phase complete (October 2026). Ready for MVP planning and partnership outreach.
+Research, concept, and interactive prototype complete (October 2026). Ready for MVP planning, real data integration, and partnership outreach.
 
 ## Documentation
 - [Research Findings](docs/research.md)
@@ -32,8 +48,9 @@ Research and concept phase complete (October 2026). Ready for MVP planning and p
 ## Next Steps
 1. Validate with EV owners.
 2. Prioritize top networks for integration.
-3. Build MVP (map + public data + Maps contribution).
-4. Pursue partnerships for live data (OCPI preferred).
+3. Expand prototype with real data sources and live status.
+4. Pursue partnerships for OCPI / API feeds.
+5. Deploy as progressive web app.
 
 ---
 
