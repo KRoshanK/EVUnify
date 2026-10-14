@@ -7,139 +7,201 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root {
-    --bg: #0f1419;
-    --card: #1a2332;
-    --accent: #00d4aa;
-    --text: #e8f0fe;
-    --muted: #8b9bb4;
+    --bg: #f0fdf4;
+    --bg-soft: #ecfdf5;
+    --card: #ffffff;
+    --accent: #059669;
+    --accent-light: #10b981;
+    --accent-dark: #047857;
+    --text: #064e3b;
+    --text-soft: #065f46;
+    --muted: #6b7280;
+    --border: #d1fae5;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: linear-gradient(160deg, #f0fdf4 0%, #d1fae5 50%, #ecfdf5 100%);
     color: var(--text);
     height: 100vh;
     overflow: hidden;
   }
   header {
-    height: 60px;
-    background: var(--card);
+    height: 64px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
-    border-bottom: 1px solid #2a3548;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
     z-index: 1000;
+    box-shadow: 0 1px 3px rgba(5,150,105,0.06);
   }
-  .logo { font-size: 22px; font-weight: 700; color: var(--accent); }
-  .logo span { color: var(--text); font-weight: 500; }
-  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .logo {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text); font-weight: 600; }
+  .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   button, .btn {
     background: var(--accent);
-    color: #0f1419;
+    color: #ffffff;
     border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: 9px 16px;
+    border-radius: 10px;
     font-weight: 600;
     font-size: 13px;
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
   }
-  button.secondary { background: #2a3548; color: var(--text); }
-  .wallet { background: #2a3548; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  #map { height: calc(100vh - 60px - 280px); width: 100%; }
+  button:hover { background: var(--accent-dark); }
+  button.secondary {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.secondary:hover { background: var(--bg-soft); }
+  .wallet {
+    background: #ffffff;
+    color: var(--accent-dark);
+    padding: 7px 14px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(5,150,105,0.08);
+  }
+  #map {
+    height: calc(100vh - 64px - 290px);
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+  }
   .bottom-panel {
-    height: 280px;
-    background: var(--card);
-    border-top: 1px solid #2a3548;
+    height: 290px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
   }
   .filters {
     display: flex;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 12px 16px;
     overflow-x: auto;
     white-space: nowrap;
-    border-bottom: 1px solid #2a3548;
+    border-bottom: 1px solid var(--border);
   }
   .filter-chip {
-    background: #2a3548;
-    color: var(--text);
-    border: none;
-    padding: 6px 12px;
-    border-radius: 20px;
+    background: #ffffff;
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    padding: 7px 14px;
+    border-radius: 24px;
     font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
+    transition: all 0.15s ease;
   }
-  .filter-chip.active { background: var(--accent); color: #0f1419; }
+  .filter-chip.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+  }
   .station-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 12px;
+    padding: 10px 16px;
   }
   .station-item {
-    background: #0f1419;
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 8px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
-  .station-item:hover, .station-item.active { border-color: var(--accent); }
-  .station-item h3 { font-size: 14px; margin-bottom: 4px; }
-  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .station-item:hover, .station-item.active {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(5,150,105,0.1);
+  }
+  .station-item h3 { font-size: 15px; margin-bottom: 5px; color: var(--text); }
+  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .network-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 3px 9px;
+    border-radius: 14px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     color: #fff;
   }
-  .popup-content { font-size: 13px; line-height: 1.5; }
+  .popup-content { font-size: 13px; line-height: 1.55; color: var(--text); }
   .popup-content h3 { margin: 0 0 6px; color: var(--accent); }
-  .status-available { color: #00d4aa; }
-  .status-busy { color: #f59e0b; }
-  .status-offline { color: #ef4444; }
-  .leaflet-popup-content-wrapper { background: var(--card); color: var(--text); border-radius: 12px; }
-  .leaflet-popup-tip { background: var(--card); }
+  .status-available { color: var(--accent); font-weight: 600; }
+  .status-busy { color: #d97706; font-weight: 600; }
+  .status-offline { color: #dc2626; font-weight: 600; }
+  .leaflet-popup-content-wrapper {
+    background: #ffffff;
+    color: var(--text);
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(5,150,105,0.15);
+  }
+  .leaflet-popup-tip { background: #ffffff; }
   .modal {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(6,78,59,0.35);
+    backdrop-filter: blur(4px);
     z-index: 2000;
     align-items: center;
     justify-content: center;
   }
   .modal.open { display: flex; }
   .modal-card {
-    background: var(--card);
-    padding: 24px;
-    border-radius: 16px;
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 20px;
     width: 90%;
     max-width: 420px;
-    max-height: 80vh;
+    max-height: 82vh;
     overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(5,150,105,0.18);
+    border: 1px solid var(--border);
   }
-  .modal-card h2 { margin-bottom: 12px; color: var(--accent); }
+  .modal-card h2 { margin-bottom: 12px; color: var(--accent); font-size: 22px; }
   .modal-card input, .modal-card select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #2a3548;
-    background: #0f1419;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #f9fafb;
     color: var(--text);
+    font-size: 14px;
   }
-  .note { font-size: 11px; color: var(--muted); margin-top: 8px; }
-  .history-item { background: #0f1419; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+  .modal-card input:focus { outline: none; border-color: var(--accent); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+  .history-item {
+    background: #f0fdf4;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+  }
   .map-toggle { font-size: 12px; }
   @media (max-width: 600px) {
-    #map { height: calc(100vh - 60px - 340px); }
-    .bottom-panel { height: 340px; }
+    #map { height: calc(100vh - 64px - 350px); }
+    .bottom-panel { height: 350px; }
+    header { padding: 0 12px; }
   }
 </style>
 </head>
@@ -163,11 +225,11 @@
 <div class="modal" id="authModal">
   <div class="modal-card">
     <h2>One Account for All Networks</h2>
-    <p style="font-size:14px;margin-bottom:12px;">Register once. Charge and pay on Tata, Mahindra, MG, Statiq, ChargeZone, Jio-bp and more.</p>
+    <p style="font-size:15px;margin-bottom:14px;color:var(--text-soft);">Register once. Charge and pay on Tata, Mahindra, MG, Statiq, ChargeZone, Jio-bp and more — all under one sustainable wallet.</p>
     <input id="userName" placeholder="Your name" />
     <input id="userPhone" placeholder="Mobile number" type="tel" />
-    <button onclick="register()" style="width:100%;margin-top:8px;">Create Unified Account</button>
-    <button class="secondary" onclick="closeAuth()" style="width:100%;margin-top:6px;">Cancel</button>
+    <button onclick="register()" style="width:100%;margin-top:10px;">Create Unified Account</button>
+    <button class="secondary" onclick="closeAuth()" style="width:100%;margin-top:8px;">Cancel</button>
     <div class="note">Prototype simulation only. Real version uses OCPI roaming + UPI / wallet.</div>
   </div>
 </div>
@@ -176,12 +238,12 @@
 <div class="modal" id="walletModal">
   <div class="modal-card">
     <h2>Unified Wallet</h2>
-    <p>Balance: <strong id="walletBalance">₹0</strong></p>
+    <p>Balance: <strong id="walletBalance" style="color:var(--accent);">₹0</strong></p>
     <input id="addAmount" type="number" placeholder="Amount to add (₹)" min="100" step="100" value="500" />
-    <button onclick="addMoney()" style="width:100%;margin-top:8px;">Add Money (UPI Simulation)</button>
-    <h3 style="margin-top:16px;margin-bottom:8px;">Session History</h3>
+    <button onclick="addMoney()" style="width:100%;margin-top:10px;">Add Money (UPI Simulation)</button>
+    <h3 style="margin-top:18px;margin-bottom:10px;color:var(--text);">Session History</h3>
     <div id="historyList"></div>
-    <button class="secondary" onclick="closeWallet()" style="width:100%;margin-top:12px;">Close</button>
+    <button class="secondary" onclick="closeWallet()" style="width:100%;margin-top:14px;">Close</button>
     <div class="note">In production: real UPI / card top-up and OCPI session records.</div>
   </div>
 </div>
@@ -190,31 +252,31 @@
 <div class="modal" id="chargeModal">
   <div class="modal-card">
     <h2 id="chargeTitle">Start Charging</h2>
-    <p id="chargeDetails"></p>
-    <p style="margin:12px 0;">Estimated cost: <strong>₹45 – ₹80</strong> (depends on energy used)</p>
+    <p id="chargeDetails" style="color:var(--text-soft);"></p>
+    <p style="margin:14px 0;">Estimated cost: <strong style="color:var(--accent);">₹45 – ₹80</strong> (depends on energy used)</p>
     <button onclick="startCharge()" style="width:100%;">Pay & Start Charge</button>
-    <button class="secondary" onclick="closeCharge()" style="width:100%;margin-top:6px;">Cancel</button>
+    <button class="secondary" onclick="closeCharge()" style="width:100%;margin-top:8px;">Cancel</button>
     <div class="note">In production this sends a start command to the operator via OCPI and processes payment through the unified wallet / UPI.</div>
   </div>
 </div>
 
-<!-- API Key Notice Modal -->
+<!-- Soft Google Maps notice (no dark overlay) -->
 <div class="modal" id="apiKeyModal">
   <div class="modal-card">
-    <h2>Google Maps API Key Required</h2>
-    <p>To use the real Google Maps embed:</p>
-    <ol style="margin:12px 0 12px 18px;font-size:14px;line-height:1.6;">
-      <li>Go to <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" style="color:#00d4aa">Google Cloud Console</a></li>
-      <li>Create a project → Enable <strong>Maps JavaScript API</strong></li>
-      <li>Create an API key and restrict it to your domain</li>
-      <li>Replace <code>YOUR_GOOGLE_MAPS_API_KEY</code> in the HTML (search for it)</li>
+    <h2>Enable Google Maps</h2>
+    <p style="font-size:14px;color:var(--text-soft);margin-bottom:12px;">For the full Google Maps experience, add your API key once:</p>
+    <ol style="margin:0 0 16px 18px;font-size:14px;line-height:1.7;color:var(--text-soft);">
+      <li>Open <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" style="color:var(--accent);font-weight:600;">Google Cloud Console</a></li>
+      <li>Enable <strong>Maps JavaScript API</strong></li>
+      <li>Create a restricted API key</li>
+      <li>Replace <code style="background:#f0fdf4;padding:2px 6px;border-radius:4px;">YOUR_GOOGLE_MAPS_API_KEY</code> in the HTML</li>
     </ol>
-    <button onclick="closeApiKey()" style="width:100%;">Got it</button>
+    <button onclick="closeApiKey()" style="width:100%;">Continue with Leaflet</button>
+    <div class="note">Leaflet works perfectly without any key. Google Maps is optional.</div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Google Maps script will be loaded dynamically when needed -->
 <script>
 const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // ← PUT YOUR KEY HERE
 
@@ -263,7 +325,7 @@ function initMap() {
 function initLeaflet() {
   if (leafletMap) leafletMap.remove();
   leafletMap = L.map('map').setView([19.076, 72.877], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 20
@@ -293,11 +355,9 @@ function initGoogleMap() {
     center: { lat: 19.076, lng: 72.877 },
     zoom: 11,
     styles: [
-      { elementType: "geometry", stylers: [{ color: "#0f1419" }] },
-      { elementType: "labels.text.stroke", stylers: [{ color: "#0f1419" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#8b9bb4" }] },
-      { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a2332" }] },
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a0e14" }] }
+      { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#a7f3d0" }] },
+      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#ecfdf5" }] }
     ]
   });
   renderStations();
@@ -346,14 +406,12 @@ function renderStations() {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 9,
           fillColor: getColor(s.network),
-          fillOpacity: 0.9,
-          strokeColor: "#fff",
+          fillOpacity: 0.95,
+          strokeColor: "#ffffff",
           strokeWeight: 2
         }
       });
-      const info = new google.maps.InfoWindow({
-        content: buildPopup(s)
-      });
+      const info = new google.maps.InfoWindow({ content: buildPopup(s) });
       marker.addListener("click", () => info.open(googleMap, marker));
       googleMarkers.push(marker);
     });
@@ -367,7 +425,7 @@ function renderStations() {
     markers = [];
     filtered.forEach(s => {
       const marker = L.circleMarker([s.lat, s.lng], {
-        radius: 9, fillColor: getColor(s.network), color: "#fff", weight: 2, fillOpacity: 0.9
+        radius: 9, fillColor: getColor(s.network), color: "#ffffff", weight: 2, fillOpacity: 0.95
       }).addTo(leafletMap);
       marker.bindPopup(buildPopup(s));
       markers.push(marker);
@@ -387,7 +445,7 @@ function renderStations() {
         <span class="${s.status === 'Available' ? 'status-available' : ''}">${s.status}</span>
       </div>
     </div>
-  `).join('') || '<div style="padding:20px;text-align:center;color:#8b9bb4">No stations</div>';
+  `).join('') || '<div style="padding:20px;text-align:center;color:var(--muted)">No stations</div>';
 }
 
 function buildPopup(s) {
@@ -398,12 +456,12 @@ function buildPopup(s) {
       <div><strong>${s.network}</strong> • ${s.power}</div>
       <div>Connector: ${s.connectors}</div>
       <div class="${statusClass}">● ${s.status}</div>
-      <div style="margin:6px 0;font-size:12px;color:#8b9bb4">${s.address}</div>
+      <div style="margin:6px 0;font-size:12px;color:var(--muted)">${s.address}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank"
-           style="background:#00d4aa;color:#0f1419;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Google Maps</a>
-        <button onclick="openCharge(${s.id})" style="background:#00d4aa;color:#0f1419;border:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Charge & Pay</button>
-        <a href="${s.deepLink}" target="_blank" style="background:#2a3548;color:#e8f0fe;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;">Operator App</a>
+           style="background:#059669;color:#ffffff;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;">Google Maps</a>
+        <button onclick="openCharge(${s.id})" style="background:#059669;color:#ffffff;border:none;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Charge & Pay</button>
+        <a href="${s.deepLink}" target="_blank" style="background:#f0fdf4;color:#065f46;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:12px;border:1px solid #d1fae5;">Operator App</a>
       </div>
     </div>`;
 }
@@ -444,7 +502,7 @@ function register() {
   updateWallet();
   document.getElementById('authBtn').textContent = "Hi, " + name.split(" ")[0];
   closeAuth();
-  alert("Unified account created!\nYou can now charge and pay on any network with this single wallet.");
+  alert("Unified account created!\nYou can now charge and pay on any network with this single sustainable wallet.");
 }
 
 function updateWallet() {
@@ -476,9 +534,9 @@ function renderHistory() {
   list.innerHTML = sessions.length ? sessions.map(s => `
     <div class="history-item">
       <strong>${s.type}</strong> • ₹${s.amount} • ${s.time}<br>
-      <span style="color:#8b9bb4">${s.detail}</span>
+      <span style="color:var(--muted)">${s.detail}</span>
     </div>
-  `).join('') : '<div style="color:#8b9bb4;font-size:13px;">No sessions yet</div>';
+  `).join('') : '<div style="color:var(--muted);font-size:13px;">No sessions yet</div>';
 }
 
 function openCharge(id) {
