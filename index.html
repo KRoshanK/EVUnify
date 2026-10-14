@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>EVUnify — Unified EV Charging India</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root {
     --bg: #052e16;
@@ -59,17 +60,7 @@
     cursor: pointer;
     border: 1px solid var(--border);
   }
-  #map-container {
-    height: calc(100vh - 64px - 290px);
-    width: 100%;
-    position: relative;
-    background: #064e3b;
-  }
-  #map-iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-  }
+  #map { height: calc(100vh - 64px - 290px); width: 100%; }
   .bottom-panel {
     height: 290px;
     background: rgba(5,46,22,0.95);
@@ -126,6 +117,18 @@
     text-transform: uppercase;
     color: #fff;
   }
+  .popup-content { font-size: 13px; line-height: 1.5; color: var(--text); }
+  .popup-content h3 { margin: 0 0 6px; color: var(--accent); }
+  .status-available { color: var(--accent-bright); font-weight: 600; }
+  .status-busy { color: #fbbf24; font-weight: 600; }
+  .status-offline { color: #f87171; font-weight: 600; }
+  .leaflet-popup-content-wrapper {
+    background: #065f46;
+    color: var(--text);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .leaflet-popup-tip { background: #065f46; }
   .modal {
     display: none;
     position: fixed;
@@ -163,7 +166,7 @@
     border: 1px solid var(--border);
   }
   @media (max-width: 600px) {
-    #map-container { height: calc(100vh - 64px - 340px); }
+    #map { height: calc(100vh - 64px - 340px); }
     .bottom-panel { height: 340px; }
   }
 </style>
@@ -174,17 +177,10 @@
   <div class="header-actions">
     <div class="wallet" id="walletDisplay" onclick="openWallet()">Wallet: ₹0</div>
     <button class="secondary" id="authBtn" onclick="openAuth()">Register / Login</button>
-    <button class="secondary" onclick="centerOnUser()">📍 My Location</button>
+    <button class="secondary" onclick="centerOnUser()">📍 Near Me</button>
   </div>
 </header>
-<div id="map-container">
-  <iframe id="map-iframe"
-    src="https://maps.google.com/maps?q=19.076,72.877&z=12&output=embed"
-    allowfullscreen
-    loading="lazy"
-    referrerpolicy="no-referrer-when-downgrade">
-  </iframe>
-</div>
+<div id="map"></div>
 <div class="bottom-panel">
   <div class="filters" id="filters"></div>
   <div class="station-list" id="stationList"></div>
@@ -226,6 +222,7 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const stations = [
   { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
@@ -253,40 +250,23 @@ const networkColors = {
   "e for me": "#3b82f6", "BESCOM": "#94a3b8"
 };
 
-let activeFilter = "All";
+let map, markers = [], activeFilter = "All";
 let user = null;
 let wallet = 0;
 let sessions = [];
 let currentStation = null;
-let userLat = 19.076, userLng = 72.877;
 
-function setMapLocation(query, zoom = 15) {
-  const iframe = document.getElementById('map-iframe');
-  const q = encodeURIComponent(query);
-  iframe.src = `https://maps.google.com/maps?q=${q}&z=${zoom}&output=embed`;
-}
-
-function init() {
+function initMap() {
+  map = L.map('map').setView([19.076, 72.877], 11);
+  // Free OpenStreetMap tiles — no API key, no watermark
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
   renderFilters();
   renderStations();
   updateWallet();
   renderHistory();
-  centerOnUser(true);
-}
-
-function centerOnUser(silent = false) {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      setMapLocation(`${userLat},${userLng}`, 13);
-    }, () => {
-      if (!silent) alert("Location access denied. Showing Mumbai.");
-      setMapLocation("Mumbai, India", 11);
-    });
-  } else {
-    setMapLocation("Mumbai, India", 11);
-  }
 }
 
 function renderFilters() {
@@ -304,7 +284,18 @@ function setFilter(network) {
 function getColor(network) { return networkColors[network] || "#94a3b8"; }
 
 function renderStations() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
   const filtered = activeFilter === "All" ? stations : stations.filter(s => s.network === activeFilter);
+  filtered.forEach(s => {
+    const marker = L.circleMarker([s.lat, s.lng], {
+      radius: 10, fillColor: getColor(s.network), color: "#ecfdf5", weight: 2, fillOpacity: 0.95
+    }).addTo(map);
+    marker.bindPopup(buildPopup(s));
+    markers.push(marker);
+  });
+  if (filtered.length) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.15));
+
   document.getElementById('stationList').innerHTML = filtered.map(s => `
     <div class="station-item" onclick="focusStation(${s.id})">
       <h3>${s.name}</h3>
@@ -318,12 +309,38 @@ function renderStations() {
   `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-soft)">No stations</div>';
 }
 
+function buildPopup(s) {
+  const statusClass = s.status === "Available" ? "status-available" : s.status === "Busy" ? "status-busy" : "status-offline";
+  return `
+    <div class="popup-content">
+      <h3>${s.name}</h3>
+      <div><strong>${s.network}</strong> • ${s.power}</div>
+      <div>Connector: ${s.connectors}</div>
+      <div class="${statusClass}">● ${s.status}</div>
+      <div style="margin:6px 0;font-size:12px;color:var(--text-soft)">${s.address}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank"
+           style="background:#34d399;color:#052e16;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;">Navigate</a>
+        <button onclick="openCharge(${s.id})" style="background:#34d399;color:#052e16;border:none;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Charge & Pay</button>
+        <a href="${s.deepLink}" target="_blank" style="background:transparent;color:var(--text);padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;border:1px solid var(--border);">Operator App</a>
+      </div>
+    </div>`;
+}
+
 function focusStation(id) {
   const s = stations.find(st => st.id === id);
   if (!s) return;
-  // Use name + address so Google Maps resolves the place cleanly
-  setMapLocation(`${s.name}, ${s.address}`, 16);
-  currentStation = s;
+  map.setView([s.lat, s.lng], 15);
+  const marker = markers.find(m => m.getLatLng().lat === s.lat && m.getLatLng().lng === s.lng);
+  if (marker) marker.openPopup();
+}
+
+function centerOnUser() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      map.setView([pos.coords.latitude, pos.coords.longitude], 13);
+    });
+  }
 }
 
 function openAuth() { document.getElementById('authModal').classList.add('open'); }
@@ -337,7 +354,7 @@ function register() {
   updateWallet();
   document.getElementById('authBtn').textContent = "Hi, " + name.split(" ")[0];
   closeAuth();
-  alert("Unified account created!");
+  alert("Unified account created! You can now charge on any network.");
 }
 
 function updateWallet() {
@@ -375,7 +392,7 @@ function renderHistory() {
 }
 
 function openCharge(id) {
-  if (!user) { alert("Please register first."); openAuth(); return; }
+  if (!user) { alert("Please register / login once to use unified charging."); openAuth(); return; }
   currentStation = stations.find(s => s.id === id);
   document.getElementById('chargeTitle').textContent = "Charge at " + currentStation.name;
   document.getElementById('chargeDetails').innerHTML = `${currentStation.network} • ${currentStation.power}<br>${currentStation.address}`;
@@ -385,21 +402,21 @@ function closeCharge() { document.getElementById('chargeModal').classList.remove
 
 function startCharge() {
   const cost = Math.floor(Math.random() * 40) + 40;
-  if (wallet < cost) { alert("Insufficient balance."); openWallet(); return; }
+  if (wallet < cost) { alert("Insufficient balance. Add money first."); openWallet(); return; }
   wallet -= cost;
   sessions.unshift({
     type: "Charging",
     amount: -cost,
     time: new Date().toLocaleString(),
-    detail: currentStation.name
+    detail: `${currentStation.name} (${currentStation.network})`
   });
   updateWallet();
   renderHistory();
   closeCharge();
-  alert(`Charging started! ₹${cost} deducted.`);
+  alert(`Charging started at ${currentStation.name}!\n₹${cost} deducted from your unified wallet.`);
 }
 
-init();
+initMap();
 </script>
 </body>
 </html>
