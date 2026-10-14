@@ -7,83 +7,81 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root {
-    --bg: #f0fdf4;
-    --bg-soft: #ecfdf5;
-    --card: #ffffff;
-    --accent: #059669;
-    --accent-light: #10b981;
-    --accent-dark: #047857;
-    --text: #064e3b;
-    --text-soft: #065f46;
-    --muted: #6b7280;
-    --border: #d1fae5;
+    --bg: #052e16;
+    --bg-mid: #064e3b;
+    --card: #065f46;
+    --card-soft: #047857;
+    --accent: #34d399;
+    --accent-bright: #6ee7b7;
+    --text: #ecfdf5;
+    --text-soft: #a7f3d0;
+    --muted: #6ee7b7;
+    --border: #047857;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    background: linear-gradient(160deg, #f0fdf4 0%, #d1fae5 50%, #ecfdf5 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(145deg, #052e16 0%, #064e3b 40%, #065f46 100%);
     color: var(--text);
     height: 100vh;
     overflow: hidden;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(52,211,153,0.12) 0%, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(16,185,129,0.1) 0%, transparent 35%);
   }
   header {
     height: 64px;
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: blur(12px);
+    background: rgba(5,46,22,0.92);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 18px;
     border-bottom: 1px solid var(--border);
     z-index: 1000;
-    box-shadow: 0 1px 3px rgba(5,150,105,0.06);
   }
   .logo {
     font-size: 24px;
     font-weight: 800;
     color: var(--accent);
-    letter-spacing: -0.5px;
+    letter-spacing: -0.4px;
   }
-  .logo span { color: var(--text); font-weight: 600; }
-  .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .logo span { color: var(--accent-bright); font-weight: 600; }
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   button, .btn {
     background: var(--accent);
-    color: #ffffff;
+    color: #052e16;
     border: none;
-    padding: 9px 16px;
+    padding: 8px 14px;
     border-radius: 10px;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
   }
-  button:hover { background: var(--accent-dark); }
+  button:hover { background: var(--accent-bright); }
   button.secondary {
-    background: #ffffff;
+    background: transparent;
     color: var(--text);
     border: 1px solid var(--border);
   }
-  button.secondary:hover { background: var(--bg-soft); }
+  button.secondary:hover { background: rgba(52,211,153,0.15); }
   .wallet {
-    background: #ffffff;
-    color: var(--accent-dark);
-    padding: 7px 14px;
-    border-radius: 24px;
+    background: rgba(52,211,153,0.15);
+    color: var(--accent-bright);
+    padding: 6px 12px;
+    border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     border: 1px solid var(--border);
-    box-shadow: 0 1px 2px rgba(5,150,105,0.08);
   }
   #map {
     height: calc(100vh - 64px - 290px);
     width: 100%;
-    border-bottom: 1px solid var(--border);
   }
   .bottom-panel {
     height: 290px;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(8px);
+    background: rgba(5,46,22,0.95);
     border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -91,117 +89,110 @@
   .filters {
     display: flex;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 12px 14px;
     overflow-x: auto;
     white-space: nowrap;
     border-bottom: 1px solid var(--border);
   }
   .filter-chip {
-    background: #ffffff;
+    background: rgba(6,95,70,0.6);
     color: var(--text-soft);
     border: 1px solid var(--border);
     padding: 7px 14px;
-    border-radius: 24px;
+    border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.15s ease;
   }
   .filter-chip.active {
     background: var(--accent);
-    color: #ffffff;
+    color: #052e16;
     border-color: var(--accent);
   }
   .station-list {
     flex: 1;
     overflow-y: auto;
-    padding: 10px 16px;
+    padding: 10px 14px;
   }
   .station-item {
-    background: #ffffff;
+    background: rgba(6,95,70,0.55);
     border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
+    padding: 13px;
+    margin-bottom: 9px;
     cursor: pointer;
-    border: 1px solid var(--border);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid transparent;
   }
   .station-item:hover, .station-item.active {
     border-color: var(--accent);
-    box-shadow: 0 2px 8px rgba(5,150,105,0.1);
+    background: rgba(4,120,87,0.7);
   }
-  .station-item h3 { font-size: 15px; margin-bottom: 5px; color: var(--text); }
-  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .station-item h3 { font-size: 14px; margin-bottom: 4px; color: var(--text); }
+  .meta { font-size: 12px; color: var(--text-soft); display: flex; gap: 10px; flex-wrap: wrap; }
   .network-badge {
     display: inline-block;
-    padding: 3px 9px;
-    border-radius: 14px;
+    padding: 2px 8px;
+    border-radius: 12px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     color: #fff;
   }
-  .popup-content { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .popup-content { font-size: 13px; line-height: 1.5; color: var(--text); }
   .popup-content h3 { margin: 0 0 6px; color: var(--accent); }
-  .status-available { color: var(--accent); font-weight: 600; }
-  .status-busy { color: #d97706; font-weight: 600; }
-  .status-offline { color: #dc2626; font-weight: 600; }
+  .status-available { color: var(--accent-bright); font-weight: 600; }
+  .status-busy { color: #fbbf24; font-weight: 600; }
+  .status-offline { color: #f87171; font-weight: 600; }
   .leaflet-popup-content-wrapper {
-    background: #ffffff;
+    background: #065f46;
     color: var(--text);
-    border-radius: 14px;
-    box-shadow: 0 4px 20px rgba(5,150,105,0.15);
+    border-radius: 12px;
+    border: 1px solid var(--border);
   }
-  .leaflet-popup-tip { background: #ffffff; }
+  .leaflet-popup-tip { background: #065f46; }
   .modal {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(6,78,59,0.35);
-    backdrop-filter: blur(4px);
+    background: rgba(5,46,22,0.75);
     z-index: 2000;
     align-items: center;
     justify-content: center;
   }
   .modal.open { display: flex; }
   .modal-card {
-    background: #ffffff;
-    padding: 28px;
-    border-radius: 20px;
+    background: #065f46;
+    padding: 26px;
+    border-radius: 18px;
     width: 90%;
     max-width: 420px;
-    max-height: 82vh;
+    max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(5,150,105,0.18);
     border: 1px solid var(--border);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
   }
-  .modal-card h2 { margin-bottom: 12px; color: var(--accent); font-size: 22px; }
-  .modal-card input, .modal-card select {
+  .modal-card h2 { margin-bottom: 12px; color: var(--accent); }
+  .modal-card input {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     margin: 8px 0;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: #f9fafb;
+    background: #052e16;
     color: var(--text);
-    font-size: 14px;
   }
-  .modal-card input:focus { outline: none; border-color: var(--accent); }
-  .note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+  .note { font-size: 12px; color: var(--text-soft); margin-top: 8px; }
   .history-item {
-    background: #f0fdf4;
-    padding: 12px;
+    background: #052e16;
+    padding: 11px;
     border-radius: 10px;
     margin-bottom: 8px;
     font-size: 13px;
     border: 1px solid var(--border);
   }
-  .map-toggle { font-size: 12px; }
   @media (max-width: 600px) {
-    #map { height: calc(100vh - 64px - 350px); }
-    .bottom-panel { height: 350px; }
-    header { padding: 0 12px; }
+    #map { height: calc(100vh - 64px - 340px); }
+    .bottom-panel { height: 340px; }
   }
 </style>
 </head>
@@ -211,7 +202,6 @@
   <div class="header-actions">
     <div class="wallet" id="walletDisplay" onclick="openWallet()">Wallet: ₹0</div>
     <button class="secondary" id="authBtn" onclick="openAuth()">Register / Login</button>
-    <button class="secondary map-toggle" onclick="toggleMapMode()">Map: Leaflet</button>
     <button class="secondary" onclick="centerOnUser()">📍 Near Me</button>
   </div>
 </header>
@@ -225,12 +215,12 @@
 <div class="modal" id="authModal">
   <div class="modal-card">
     <h2>One Account for All Networks</h2>
-    <p style="font-size:15px;margin-bottom:14px;color:var(--text-soft);">Register once. Charge and pay on Tata, Mahindra, MG, Statiq, ChargeZone, Jio-bp and more — all under one sustainable wallet.</p>
+    <p style="font-size:14px;margin-bottom:12px;color:var(--text-soft);">Register once. Charge and pay on every network with a single sustainable wallet.</p>
     <input id="userName" placeholder="Your name" />
     <input id="userPhone" placeholder="Mobile number" type="tel" />
     <button onclick="register()" style="width:100%;margin-top:10px;">Create Unified Account</button>
     <button class="secondary" onclick="closeAuth()" style="width:100%;margin-top:8px;">Cancel</button>
-    <div class="note">Prototype simulation only. Real version uses OCPI roaming + UPI / wallet.</div>
+    <div class="note">Prototype simulation only.</div>
   </div>
 </div>
 
@@ -241,10 +231,9 @@
     <p>Balance: <strong id="walletBalance" style="color:var(--accent);">₹0</strong></p>
     <input id="addAmount" type="number" placeholder="Amount to add (₹)" min="100" step="100" value="500" />
     <button onclick="addMoney()" style="width:100%;margin-top:10px;">Add Money (UPI Simulation)</button>
-    <h3 style="margin-top:18px;margin-bottom:10px;color:var(--text);">Session History</h3>
+    <h3 style="margin-top:16px;margin-bottom:8px;">Session History</h3>
     <div id="historyList"></div>
-    <button class="secondary" onclick="closeWallet()" style="width:100%;margin-top:14px;">Close</button>
-    <div class="note">In production: real UPI / card top-up and OCPI session records.</div>
+    <button class="secondary" onclick="closeWallet()" style="width:100%;margin-top:12px;">Close</button>
   </div>
 </div>
 
@@ -253,33 +242,14 @@
   <div class="modal-card">
     <h2 id="chargeTitle">Start Charging</h2>
     <p id="chargeDetails" style="color:var(--text-soft);"></p>
-    <p style="margin:14px 0;">Estimated cost: <strong style="color:var(--accent);">₹45 – ₹80</strong> (depends on energy used)</p>
+    <p style="margin:12px 0;">Estimated cost: <strong style="color:var(--accent);">₹45 – ₹80</strong></p>
     <button onclick="startCharge()" style="width:100%;">Pay & Start Charge</button>
     <button class="secondary" onclick="closeCharge()" style="width:100%;margin-top:8px;">Cancel</button>
-    <div class="note">In production this sends a start command to the operator via OCPI and processes payment through the unified wallet / UPI.</div>
-  </div>
-</div>
-
-<!-- Soft Google Maps notice (no dark overlay) -->
-<div class="modal" id="apiKeyModal">
-  <div class="modal-card">
-    <h2>Enable Google Maps</h2>
-    <p style="font-size:14px;color:var(--text-soft);margin-bottom:12px;">For the full Google Maps experience, add your API key once:</p>
-    <ol style="margin:0 0 16px 18px;font-size:14px;line-height:1.7;color:var(--text-soft);">
-      <li>Open <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" style="color:var(--accent);font-weight:600;">Google Cloud Console</a></li>
-      <li>Enable <strong>Maps JavaScript API</strong></li>
-      <li>Create a restricted API key</li>
-      <li>Replace <code style="background:#f0fdf4;padding:2px 6px;border-radius:4px;">YOUR_GOOGLE_MAPS_API_KEY</code> in the HTML</li>
-    </ol>
-    <button onclick="closeApiKey()" style="width:100%;">Continue with Leaflet</button>
-    <div class="note">Leaflet works perfectly without any key. Google Maps is optional.</div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // ← PUT YOUR KEY HERE
-
 const stations = [
   { id: 1, name: "Tata Power EZ Charge - BKC", lat: 19.066, lng: 72.869, network: "Tata Power", power: "60 kW DC", connectors: "CCS2", status: "Available", address: "Bandra Kurla Complex, Mumbai", deepLink: "https://www.tatapower.com" },
   { id: 2, name: "Statiq - Byculla Hub", lat: 18.975, lng: 72.832, network: "Statiq", power: "120 kW DC", connectors: "CCS2", status: "Available", address: "Byculla, Mumbai", deepLink: "https://statiq.in" },
@@ -301,81 +271,29 @@ const stations = [
 
 const networks = ["All", "Tata Power", "Statiq", "MG e-Hub", "Charge_iN", "Jio-bp", "ChargeZone", "e for me", "BESCOM"];
 const networkColors = {
-  "Tata Power": "#e31e24", "Statiq": "#7c3aed", "MG e-Hub": "#1a73e8",
-  "Charge_iN": "#ff6b00", "Jio-bp": "#00a0e3", "ChargeZone": "#f59e0b",
-  "e for me": "#0052cc", "BESCOM": "#64748b"
+  "Tata Power": "#ef4444", "Statiq": "#a78bfa", "MG e-Hub": "#60a5fa",
+  "Charge_iN": "#fb923c", "Jio-bp": "#38bdf8", "ChargeZone": "#fbbf24",
+  "e for me": "#3b82f6", "BESCOM": "#94a3b8"
 };
 
-let leafletMap, googleMap, googleMarkers = [];
-let markers = [], activeFilter = "All";
-let useGoogleMaps = false;
+let map, markers = [], activeFilter = "All";
 let user = null;
 let wallet = 0;
 let sessions = [];
 let currentStation = null;
 
 function initMap() {
-  initLeaflet();
+  map = L.map('map').setView([19.076, 72.877], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(map);
   renderFilters();
   renderStations();
   updateWallet();
   renderHistory();
 }
-
-function initLeaflet() {
-  if (leafletMap) leafletMap.remove();
-  leafletMap = L.map('map').setView([19.076, 72.877], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 20
-  }).addTo(leafletMap);
-}
-
-function loadGoogleMaps() {
-  if (GOOGLE_MAPS_API_KEY === "YOUR_GOOGLE_MAPS_API_KEY") {
-    document.getElementById('apiKeyModal').classList.add('open');
-    return false;
-  }
-  if (window.google && window.google.maps) {
-    initGoogleMap();
-    return true;
-  }
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initGoogleMap`;
-  script.async = true;
-  script.defer = true;
-  document.head.appendChild(script);
-  return true;
-}
-
-function initGoogleMap() {
-  document.getElementById('map').innerHTML = '';
-  googleMap = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 19.076, lng: 72.877 },
-    zoom: 11,
-    styles: [
-      { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#a7f3d0" }] },
-      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#ecfdf5" }] }
-    ]
-  });
-  renderStations();
-}
-
-function toggleMapMode() {
-  useGoogleMaps = !useGoogleMaps;
-  document.querySelector('.map-toggle').textContent = useGoogleMaps ? "Map: Google" : "Map: Leaflet";
-  if (useGoogleMaps) {
-    if (!loadGoogleMaps()) useGoogleMaps = false;
-  } else {
-    document.getElementById('map').innerHTML = '';
-    initLeaflet();
-    renderStations();
-  }
-}
-
-function closeApiKey() { document.getElementById('apiKeyModal').classList.remove('open'); }
 
 function renderFilters() {
   document.getElementById('filters').innerHTML = networks.map(n =>
@@ -389,51 +307,20 @@ function setFilter(network) {
   renderStations();
 }
 
-function getColor(network) { return networkColors[network] || "#64748b"; }
+function getColor(network) { return networkColors[network] || "#94a3b8"; }
 
 function renderStations() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
   const filtered = activeFilter === "All" ? stations : stations.filter(s => s.network === activeFilter);
-
-  if (useGoogleMaps && googleMap) {
-    googleMarkers.forEach(m => m.setMap(null));
-    googleMarkers = [];
-    filtered.forEach(s => {
-      const marker = new google.maps.Marker({
-        position: { lat: s.lat, lng: s.lng },
-        map: googleMap,
-        title: s.name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 9,
-          fillColor: getColor(s.network),
-          fillOpacity: 0.95,
-          strokeColor: "#ffffff",
-          strokeWeight: 2
-        }
-      });
-      const info = new google.maps.InfoWindow({ content: buildPopup(s) });
-      marker.addListener("click", () => info.open(googleMap, marker));
-      googleMarkers.push(marker);
-    });
-    if (filtered.length) {
-      const bounds = new google.maps.LatLngBounds();
-      filtered.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
-      googleMap.fitBounds(bounds);
-    }
-  } else {
-    markers.forEach(m => leafletMap.removeLayer(m));
-    markers = [];
-    filtered.forEach(s => {
-      const marker = L.circleMarker([s.lat, s.lng], {
-        radius: 9, fillColor: getColor(s.network), color: "#ffffff", weight: 2, fillOpacity: 0.95
-      }).addTo(leafletMap);
-      marker.bindPopup(buildPopup(s));
-      markers.push(marker);
-    });
-    if (filtered.length && leafletMap) {
-      leafletMap.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
-    }
-  }
+  filtered.forEach(s => {
+    const marker = L.circleMarker([s.lat, s.lng], {
+      radius: 9, fillColor: getColor(s.network), color: "#ecfdf5", weight: 2, fillOpacity: 0.95
+    }).addTo(map);
+    marker.bindPopup(buildPopup(s));
+    markers.push(marker);
+  });
+  if (filtered.length) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
 
   document.getElementById('stationList').innerHTML = filtered.map(s => `
     <div class="station-item" onclick="focusStation(${s.id})">
@@ -445,7 +332,7 @@ function renderStations() {
         <span class="${s.status === 'Available' ? 'status-available' : ''}">${s.status}</span>
       </div>
     </div>
-  `).join('') || '<div style="padding:20px;text-align:center;color:var(--muted)">No stations</div>';
+  `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-soft)">No stations</div>';
 }
 
 function buildPopup(s) {
@@ -456,12 +343,12 @@ function buildPopup(s) {
       <div><strong>${s.network}</strong> • ${s.power}</div>
       <div>Connector: ${s.connectors}</div>
       <div class="${statusClass}">● ${s.status}</div>
-      <div style="margin:6px 0;font-size:12px;color:var(--muted)">${s.address}</div>
+      <div style="margin:6px 0;font-size:12px;color:var(--text-soft)">${s.address}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank"
-           style="background:#059669;color:#ffffff;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;">Google Maps</a>
-        <button onclick="openCharge(${s.id})" style="background:#059669;color:#ffffff;border:none;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Charge & Pay</button>
-        <a href="${s.deepLink}" target="_blank" style="background:#f0fdf4;color:#065f46;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:12px;border:1px solid #d1fae5;">Operator App</a>
+           style="background:#34d399;color:#052e16;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;">Navigate</a>
+        <button onclick="openCharge(${s.id})" style="background:#34d399;color:#052e16;border:none;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Charge & Pay</button>
+        <a href="${s.deepLink}" target="_blank" style="background:transparent;color:var(--text);padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;border:1px solid var(--border);">Operator App</a>
       </div>
     </div>`;
 }
@@ -469,24 +356,13 @@ function buildPopup(s) {
 function focusStation(id) {
   const s = stations.find(st => st.id === id);
   if (!s) return;
-  if (useGoogleMaps && googleMap) {
-    googleMap.setCenter({ lat: s.lat, lng: s.lng });
-    googleMap.setZoom(15);
-  } else if (leafletMap) {
-    leafletMap.setView([s.lat, s.lng], 15);
-  }
+  map.setView([s.lat, s.lng], 15);
 }
 
 function centerOnUser() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      if (useGoogleMaps && googleMap) {
-        googleMap.setCenter({ lat, lng });
-        googleMap.setZoom(13);
-      } else if (leafletMap) {
-        leafletMap.setView([lat, lng], 13);
-      }
+      map.setView([pos.coords.latitude, pos.coords.longitude], 13);
     });
   }
 }
@@ -502,7 +378,7 @@ function register() {
   updateWallet();
   document.getElementById('authBtn').textContent = "Hi, " + name.split(" ")[0];
   closeAuth();
-  alert("Unified account created!\nYou can now charge and pay on any network with this single sustainable wallet.");
+  alert("Unified account created!\nCharge and pay on any network with one wallet.");
 }
 
 function updateWallet() {
@@ -534,13 +410,13 @@ function renderHistory() {
   list.innerHTML = sessions.length ? sessions.map(s => `
     <div class="history-item">
       <strong>${s.type}</strong> • ₹${s.amount} • ${s.time}<br>
-      <span style="color:var(--muted)">${s.detail}</span>
+      <span style="color:var(--text-soft)">${s.detail}</span>
     </div>
-  `).join('') : '<div style="color:var(--muted);font-size:13px;">No sessions yet</div>';
+  `).join('') : '<div style="color:var(--text-soft);font-size:13px;">No sessions yet</div>';
 }
 
 function openCharge(id) {
-  if (!user) { alert("Please register / login once to use unified charging & payment."); openAuth(); return; }
+  if (!user) { alert("Please register / login once."); openAuth(); return; }
   currentStation = stations.find(s => s.id === id);
   document.getElementById('chargeTitle').textContent = "Charge at " + currentStation.name;
   document.getElementById('chargeDetails').innerHTML = `${currentStation.network} • ${currentStation.power}<br>${currentStation.address}`;
@@ -550,7 +426,7 @@ function closeCharge() { document.getElementById('chargeModal').classList.remove
 
 function startCharge() {
   const cost = Math.floor(Math.random() * 40) + 40;
-  if (wallet < cost) { alert("Insufficient wallet balance. Add money first."); openWallet(); return; }
+  if (wallet < cost) { alert("Insufficient balance. Add money first."); openWallet(); return; }
   wallet -= cost;
   sessions.unshift({
     type: "Charging",
@@ -561,7 +437,7 @@ function startCharge() {
   updateWallet();
   renderHistory();
   closeCharge();
-  alert(`Charging started at ${currentStation.name}!\n₹${cost} deducted from your unified wallet.\n\nIn production: session started via OCPI on the operator’s charger.`);
+  alert(`Charging started at ${currentStation.name}!\n₹${cost} deducted from your wallet.`);
 }
 
 initMap();
