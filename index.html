@@ -260,9 +260,10 @@ let sessions = [];
 let currentStation = null;
 let userLat = 19.076, userLng = 72.877;
 
-function setMapLocation(lat, lng, zoom = 13) {
+function setMapLocation(query, zoom = 15) {
   const iframe = document.getElementById('map-iframe');
-  iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&output=embed`;
+  const q = encodeURIComponent(query);
+  iframe.src = `https://maps.google.com/maps?q=${q}&z=${zoom}&output=embed`;
 }
 
 function init() {
@@ -278,13 +279,13 @@ function centerOnUser(silent = false) {
     navigator.geolocation.getCurrentPosition(pos => {
       userLat = pos.coords.latitude;
       userLng = pos.coords.longitude;
-      setMapLocation(userLat, userLng, 13);
+      setMapLocation(`${userLat},${userLng}`, 13);
     }, () => {
       if (!silent) alert("Location access denied. Showing Mumbai.");
-      setMapLocation(userLat, userLng, 12);
+      setMapLocation("Mumbai, India", 11);
     });
   } else {
-    setMapLocation(userLat, userLng, 12);
+    setMapLocation("Mumbai, India", 11);
   }
 }
 
@@ -320,7 +321,8 @@ function renderStations() {
 function focusStation(id) {
   const s = stations.find(st => st.id === id);
   if (!s) return;
-  setMapLocation(s.lat, s.lng, 15);
+  // Use name + address so Google Maps resolves the place cleanly
+  setMapLocation(`${s.name}, ${s.address}`, 16);
   currentStation = s;
 }
 
